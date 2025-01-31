@@ -1,0 +1,220 @@
+#!/usr/bin/env bash
+
+#    ----------------------------------------------------------------------
+#    Copyright © 2025  Pellegrino Prevete
+#
+#    All rights reserved
+#    ----------------------------------------------------------------------
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU Affero General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU Affero General Public License for more details.
+#
+#    You should have received a copy of the GNU Affero General Public License
+#    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+# SPDX-License-Identifier: AGPL-3.0
+
+_bin="$( \
+  dirname \
+    "$( \
+      command \
+        -v \
+	  "env")")"
+_lib="${_bin}/../lib"
+_share="${_bin}/../share"
+source \
+  "${_lib}/libcrash-bash/crash-bash"
+
+# Check all required programs
+# are available
+_requirements() {
+  local \
+    _libtermux_exec
+  _libtermux_exec="${_lib}/libtermux-exec.so"
+  if [[ ! -e "${_libtermux_exec}" ]]; then
+    _msg_error \
+      "Install 'termux-exec'." \
+      1
+  fi
+}
+
+# shellcheck disable=SC2034
+_global_variables() {
+  creation_date=()
+  desktop_file=""
+  out_dir=""
+  color=""
+  quiet=""
+}
+
+_termux_shortcut_new() {
+  local \
+    _out_dir="${1}" \
+    _desktop_file="${2}" \
+    _shortcut_name \
+    _shortcut_cmd \
+    _shebang \
+    _lib_preload \
+    _call
+  _shortcut_name="$( \
+    cat \
+      "${desktop_file}" | \
+      grep \
+        "^Name=" | \
+	head \
+	  -n \
+	  1 | \
+	  awk \
+	    -F \
+	      '=' \
+	    '{print $2}')"
+  _shortcut_cmd="$( \
+    cat \
+      "${desktop_file}" | \
+      grep \
+        "^Exec=" | \
+	head \
+	  -n \
+	  1 | \
+	  awk \
+	    -F \
+	      '=' \
+	    '{print $2}')"
+  _shebang="#!$( \
+    realpath \
+      "${_bin}")/env bash"
+  _lib_preload="export LD_PRELOAD=$( \
+    realpath \
+      "${_lib}")/libtermux-exec.so"
+  _call="bash -c 'exec ${_shortcut_cmd}'"
+  printf \
+    '%s\n' \
+    "${_shebang}" \
+    "${_lib_preload}" \
+    "${_call}" > \
+    "${_out_dir}/${_shortcut_name}"
+}
+
+_set_overrides() {
+  local \
+    _msg=()
+  if [[ -v override_color ]]; then
+    color="${override_color}"
+  elif [[ -z "${color}" ]]; then
+    color="n"
+  fi
+  if [[ -v override_quiet ]]; then
+    quiet="${override_quiet}"
+  elif [[ -z "${quiet}" ]]; then
+    quiet="y"
+  fi
+  _set_override \
+    "creation" \
+    "date" \
+    "$(_get_date_human)"
+  _set_override \
+    "out" \
+    "dir" \
+    "${HOME}/.shortcuts"
+}
+
+# Show help usage, with an exit status.
+# $1: exit status number.
+_usage() {
+  local \
+    _usage_text
+  IFS='' \
+    read \
+      -r \
+      -d '' \
+      _usage_text << \
+        ENDUSAGETEXT || true
+
+Creates a Termux shortcut from a desktop file.
+
+Usage:
+  $(_get "app" "name")
+    [options]
+    <desktop_file>
+
+  options:
+     -o <out_dir>              Output directory.
+                               Default: ${out_dir}
+
+     -c                        Colors.
+     -h                        This message.
+     -v                        Enable verbose output
+ENDUSAGETEXT
+  _printf \
+    '%s\n' \
+    "${_usage_text}"
+  exit \
+    "${1}"
+}
+
+# Shows configuration options.
+_show_config() {
+  _msg_info "${app_name} configuration"
+  _msg_info "            Creation date:   ${creation_date}"
+  _msg_info "         Output directory:   ${out_dir}"
+  _msg_info "       Input desktop file:   ${desktop_file}"
+}
+
+_globals
+_global_variables
+_requirements
+# shellcheck disable=SC2004
+# shellcheck disable=SC2034
+while \
+  getopts \
+    'o:cvh?' \
+    arg; do
+  case \
+    "${arg}" in
+    o) override_out_dir="${OPTARG}" ;;
+    c) override_color="y" ;;
+    v) override_quiet="n" ;;
+    h|?) _set_overrides && \
+	 _usage \
+           0 ;;
+    *)
+    _msg_error \
+      "Invalid argument '${arg}'" \
+      0 && \
+    _set_overrides && \
+    _usage \
+      1
+    ;;
+  esac
+done
+shift \
+  $(( \
+    OPTIND - 1 \
+  ))
+if (( "$#" < 1 )); then
+  _msg_error \
+    "No input desktop files given." \
+    0
+  _set_overrides
+  _usage \
+    1
+fi
+_set \
+  "desktop" \
+  "file" \
+  "${1}"
+_set_overrides
+_show_config
+app_opts=(
+  "${out_dir}"
+  "${desktop_file}"
+)
+_termux_shortcut_new \
+  "${app_opts[@]}"
