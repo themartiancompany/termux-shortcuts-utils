@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# SPDX-License-Identifier: AGPL-3.0
+
 #    ----------------------------------------------------------------------
 #    Copyright © 2025  Pellegrino Prevete
 #
@@ -19,28 +21,34 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# SPDX-License-Identifier: AGPL-3.0
 
-_bin="$( \
+_bin="$(
   dirname \
-    "$( \
-      command \
-        -v \
-	  "env")")"
-_lib="${_bin}/../lib"
-_share="${_bin}/../share"
+    "$(command \
+         -v \
+         "env")")"
+_lib="$(
+  realpath \
+    "${_bin}/../lib")"
+_crash_bash="${_lib}/libcrash-bash/crash-bash"
+_sourced \
+  "${_crash_bash}" 2>"/dev/null" || \
 source \
-  "${_lib}/libcrash-bash/crash-bash"
+  "${_crash_bash}"
 
 # Check all required programs
 # are available
 _requirements() {
   local \
-    _libtermux_exec
+    _libtermux_exec \
+    _msg=()
   _libtermux_exec="${_lib}/libtermux-exec.so"
   if [[ ! -e "${_libtermux_exec}" ]]; then
+    _msg=(
+      "Install 'termux-exec'."
+    )
     _msg_error \
-      "Install 'termux-exec'." \
+      "${_msg[*]}" \
       1
   fi
 }
@@ -63,7 +71,7 @@ _termux_shortcut_new() {
     _shebang \
     _lib_preload \
     _call
-  _shortcut_name="$( \
+  _shortcut_name="$(
     cat \
       "${desktop_file}" | \
       grep \
@@ -75,7 +83,7 @@ _termux_shortcut_new() {
 	    -F \
 	      '=' \
 	    '{print $2}')"
-  _shortcut_cmd="$( \
+  _shortcut_cmd="$(
     cat \
       "${desktop_file}" | \
       grep \
@@ -87,7 +95,7 @@ _termux_shortcut_new() {
 	    -F \
 	      '=' \
 	    '{print $2}')"
-  _shebang="#!$( \
+  _shebang="#!$(
     realpath \
       "${_bin}")/env bash"
   _lib_preload="export LD_PRELOAD=$( \
@@ -185,12 +193,15 @@ while \
 	 _usage \
            0 ;;
     *)
-    _msg_error \
-      "Invalid argument '${arg}'" \
-      0 && \
-    _set_overrides && \
-    _usage \
-      1
+      _msg=(
+        "Invalid argument '${arg}'"
+      )
+      _msg_error \
+        "${_msg[*]}" \
+        0
+      _set_overrides
+      _usage \
+        1
     ;;
   esac
 done
@@ -198,18 +209,18 @@ shift \
   $(( \
     OPTIND - 1 \
   ))
-if (( "$#" < 1 )); then
+if (( "${#}" < 1 )); then
+  _msg=(
+    "No input desktop files given."
+  )
   _msg_error \
-    "No input desktop files given." \
+    "${_msg[*]}" \
     0
   _set_overrides
   _usage \
     1
 fi
-_set \
-  "desktop" \
-  "file" \
-  "${1}"
+desktop_file="${1}"
 _set_overrides
 _show_config
 app_opts=(
