@@ -21,9 +21,55 @@
    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-========================================
-Termux Shortcuts Utils Authors
-========================================
+============================
+termux-shortcut-new
+============================
 
-* Pellegrino Prevete <pellegrinoprevete@gmail.com>
-* Truocolo <truocolo@aol.com>
+------------------------------------------------------------------
+Desktop file to Termux shortcut conversion tool
+------------------------------------------------------------------
+:Version: termux-shortcut-new |version|
+:Manual section: 1
+
+
+Synopsis
+========
+
+termux-shortcut-new *[options]* *desktop-file*
+
+
+Description
+===========
+
+Creates a Termux shortcut from a desktop file.
+
+
+Options
+=======
+
+-o out-dir              Output directory.
+
+-h                      Displays help.
+-c                      Enable color output
+-v                      Enable verbose output
+
+
+Bugs
+====
+
+https://github.com/themartiancompany/termux-shortcuts-utils/-/issues
+
+
+Copyright
+=========
+
+Copyright Pellegrino Prevete. AGPL-3.0.
+
+
+See also
+========
+
+* termux-shortcuts-utils
+* videogame-installer
+
+.. include:: variables.rst

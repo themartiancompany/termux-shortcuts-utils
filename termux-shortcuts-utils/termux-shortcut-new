@@ -140,12 +140,12 @@ _usage() {
 Creates a Termux shortcut from a desktop file.
 
 Usage:
-  $(_get "app" "name")
+  ${app_name}
     [options]
-    <desktop_file>
+    <desktop-file>
 
   options:
-     -o <out_dir>              Output directory.
+     -o <out-dir>              Output directory.
                                Default: ${out_dir}
 
      -c                        Colors.
